@@ -125,38 +125,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun createTelegramShareIntent(selectedItems: List<MediaItem>): Intent {
-        val uris = ArrayList<Uri>()
         val context = getApplication<Application>()
-        val authority = "${context.packageName}.fileprovider"
-
-        for (item in selectedItems) {
-            val safeUri = if (item.uri.scheme == "content") {
-                item.uri
-            } else if (!item.path.isNullOrEmpty()) {
-                try {
-                    androidx.core.content.FileProvider.getUriForFile(context, authority, java.io.File(item.path))
-                } catch (e: Exception) {
-                    item.uri
-                }
-            } else {
-                item.uri
-            }
-            uris.add(safeUri)
-        }
-
-        return Intent().apply {
-            if (uris.size == 1) {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_STREAM, uris[0])
-                type = selectedItems[0].mimeType.ifEmpty { "*/*" }
-            } else {
-                action = Intent.ACTION_SEND_MULTIPLE
-                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                type = "*/*"
-            }
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            setPackage("org.telegram.messenger")
-        }
+        val pkg = com.tastydrive.app.util.TelegramShareHelper.getInstalledTelegramPackage(context)
+        val (intent, uris) = com.tastydrive.app.util.TelegramShareHelper.buildShareIntent(context, selectedItems, pkg)
+        com.tastydrive.app.util.TelegramShareHelper.grantUriPermissions(context, intent, uris, pkg)
+        return intent
     }
 
     fun getNativeEngineInfo(): String {

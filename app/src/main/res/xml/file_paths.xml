@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Primary shared external storage (e.g. /storage/emulated/0) -->
     <external-path name="external_files" path="." />
+    <!-- External app-specific directories -->
+    <external-files-path name="external_app_files" path="." />
+    <external-cache-path name="external_app_cache" path="." />
+    <!-- Internal storage directories -->
+    <files-path name="internal_files" path="." />
+    <cache-path name="internal_cache" path="." />
+    <!-- Root filesystem (SD cards / secondary storage like /storage/XXXX-XXXX) -->
     <root-path name="root" path="." />
 </paths>
-
