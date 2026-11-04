@@ -1,0 +1,98 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+
+        <!-- Outer Glow Circle -->
+        <path
+            android:fillColor="#33FF8A00"
+            android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+
+        <!-- Rocket Boosters -->
+        <path
+            android:fillColor="#FFFF3366"
+            android:pathData="M14,60 C8,64 4,74 8,80 C12,84 18,78 18,70 Z" />
+        <path
+            android:fillColor="#FFFF9100"
+            android:pathData="M12,64 C9,67 7,72 9,76 C11,78 15,76 15,70 Z" />
+
+        <path
+            android:fillColor="#FFFF3366"
+            android:pathData="M94,60 C100,64 104,74 100,80 C96,84 90,78 90,70 Z" />
+        <path
+            android:fillColor="#FFFF9100"
+            android:pathData="M96,64 C99,67 101,72 99,76 C97,78 93,76 93,70 Z" />
+
+        <!-- Top Burger Bun -->
+        <path
+            android:fillColor="#FFA726"
+            android:pathData="M24,44 C24,20 84,20 84,44 Z" />
+
+        <!-- Sesame Seeds on Bun -->
+        <path
+            android:fillColor="#FFF8E1"
+            android:pathData="M40,30 a2,1.2 0 1,0 4,0 a2,1.2 0 1,0 -4,0 M52,26 a2,1.2 0 1,0 4,0 a2,1.2 0 1,0 -4,0 M64,30 a2,1.2 0 1,0 4,0 a2,1.2 0 1,0 -4,0 M46,36 a2,1.2 0 1,0 4,0 a2,1.2 0 1,0 -4,0 M60,36 a2,1.2 0 1,0 4,0 a2,1.2 0 1,0 -4,0" />
+
+        <!-- Cool Sunglasses -->
+        <path
+            android:fillColor="#121318"
+            android:pathData="M32,38 h16 c0,8 -3,11 -8,11 c-5,0 -8,-3 -8,-11 Z" />
+        <path
+            android:fillColor="#121318"
+            android:pathData="M60,38 h16 c0,8 -3,11 -8,11 c-5,0 -8,-3 -8,-11 Z" />
+        <path
+            android:fillColor="#121318"
+            android:pathData="M48,40 h12 v3 h-12 Z" />
+        <path
+            android:fillColor="#80FFFFFF"
+            android:pathData="M35,40 l6,6 h-2 l-5,-5 Z M63,40 l6,6 h-2 l-5,-5 Z" />
+
+        <!-- Lettuce Layer -->
+        <path
+            android:fillColor="#00C49F"
+            android:pathData="M20,46 C24,48 28,44 32,46 C36,48 40,44 44,46 C48,48 52,44 56,46 C60,48 64,44 68,46 C72,48 76,44 80,46 C84,48 88,46 88,46 C88,50 20,50 20,46 Z" />
+
+        <!-- Melted Cheese Layer -->
+        <path
+            android:fillColor="#FFD600"
+            android:pathData="M22,50 L86,50 L82,56 L70,52 L62,58 L50,52 L40,57 L30,51 L22,56 Z" />
+
+        <!-- Juicy Burger Patty -->
+        <path
+            android:fillColor="#6D4C41"
+            android:pathData="M22,55 C22,53 86,53 86,55 C86,64 22,64 22,55 Z" />
+
+        <!-- Smile -->
+        <path
+            android:fillColor="#D81B60"
+            android:pathData="M46,58 C46,64 62,64 62,58 Z" />
+
+        <!-- Bottom Bun -->
+        <path
+            android:fillColor="#FFA726"
+            android:pathData="M24,64 L84,64 C84,74 24,74 24,64 Z" />
+
+        <!-- Drive Wheels -->
+        <path
+            android:fillColor="#37474F"
+            android:pathData="M32,74 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
+        <path
+            android:fillColor="#CFD8DC"
+            android:pathData="M32,74 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+
+        <path
+            android:fillColor="#37474F"
+            android:pathData="M76,74 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
+        <path
+            android:fillColor="#CFD8DC"
+            android:pathData="M76,74 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+    </group>
+</vector>
+

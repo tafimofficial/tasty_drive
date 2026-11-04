@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Tasty Drive</string>
+    <string name="tab_queue">Queue</string>
+    <string name="tab_gallery">Gallery</string>
+    <string name="tab_large_files">Large Files (>50MB)</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="title_active_queue">Upload Engine</string>
+    <string name="btn_start_uploads">🚀 Start Uploads</string>
+    <string name="btn_pause_uploads">⏸ Pause</string>
+    <string name="btn_resume_uploads">▶ Resume</string>
+    <string name="btn_scan_media">🔄 Scan Media</string>
+    <string name="btn_share_telegram">🚀 Share to Telegram</string>
+
+    <string name="large_files_info">Telegram Bot API has a strict 50MB per-file upload limit. Files listed here are >50MB. Select them and tap "Share to Telegram" to send them via Telegram\'s official app with up to 2GB/4GB file size support!</string>
+</resources>
+

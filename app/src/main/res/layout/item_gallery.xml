@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="115dp"
+    android:layout_margin="3dp">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/card_dark">
+
+        <ImageView
+            android:id="@+id/ivGalleryThumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+
+        <!-- Icon container for non-photo files (APK, PDF, Doc, Audio) -->
+        <LinearLayout
+            android:id="@+id/layoutIconCenter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivGalleryCategoryIcon"
+                android:layout_width="36dp"
+                android:layout_height="36dp" />
+
+            <TextView
+                android:id="@+id/tvGalleryFileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="middle"
+                android:singleLine="true"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Gradient shadow overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom"
+            android:background="#77000000" />
+
+        <!-- File size text -->
+        <TextView
+            android:id="@+id/tvGalleryFileSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="4dp"
+            android:text="3.2 MB"
+            android:textColor="@color/white"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Video indicator badge -->
+        <ImageView
+            android:id="@+id/ivGalleryVideoBadge"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="6dp"
+            android:src="@android:drawable/ic_media_play"
+            app:tint="@color/white"
+            android:visibility="gone" />
+
+        <!-- Status Icon (Completed checkmark / Over 50MB badge) -->
+        <ImageView
+            android:id="@+id/ivGalleryStatus"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:src="@android:drawable/checkbox_on_background"
+            app:tint="@color/status_green"
+            android:visibility="gone" />
+
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

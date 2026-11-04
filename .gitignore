@@ -1,0 +1,38 @@
+# Built application files
+*.ap_
+
+# Keep the pre-built TastyDrive.apk so it's ready to download from the repo
+!/TastyDrive.apk
+
+# Java class files & Dex
+*.class
+
+# Generated files & build directories
+bin/
+gen/
+out/
+build/
+app/build/
+.cxx/
+app/.cxx/
+.externalNativeBuild/
+app/.externalNativeBuild/
+
+# Gradle cache
+.gradle/
+
+# Local configuration file (contains local machine SDK paths)
+local.properties
+
+# Android Studio / IntelliJ IDEA
+*.iml
+.idea/
+.navigation/
+captures/
+
+# Log Files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

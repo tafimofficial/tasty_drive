@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FF8A00</color>
+    <color name="primary_variant">#E56700</color>
+    <color name="primary_light">#FFA726</color>
+    <color name="secondary">#00C49F</color>
+    <color name="accent">#FF3366</color>
+
+    <!-- Dark Gourmet Butter Palette -->
+    <color name="bg_dark">#121318</color>
+    <color name="surface_dark">#1A1C24</color>
+    <color name="card_dark">#222530</color>
+    <color name="card_stroke">#2D3242</color>
+
+    <!-- Status Colors -->
+    <color name="status_green">#00E676</color>
+    <color name="status_green_bg">#1A00E676</color>
+    <color name="status_orange">#FF9100</color>
+    <color name="status_orange_bg">#1AFF9100</color>
+    <color name="status_blue">#00B0FF</color>
+    <color name="status_blue_bg">#1A00B0FF</color>
+    <color name="status_purple">#AA00FF</color>
+    <color name="status_purple_bg">#1AAA00FF</color>
+    <color name="status_red">#FF5252</color>
+    <color name="status_red_bg">#1AFF5252</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="white_40">#66FFFFFF</color>
+    <color name="white_12">#1FFFFFFF</color>
+    <color name="black">#000000</color>
+</resources>
+
