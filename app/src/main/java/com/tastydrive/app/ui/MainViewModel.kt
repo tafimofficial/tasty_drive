@@ -90,11 +90,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun scanMedia() {
+        if (_isScanning.value) return
         viewModelScope.launch(Dispatchers.IO) {
-            _isScanning.value = true
-            val scanned = mediaScanner.scanAllMedia()
-            uploadManager.setAllMedia(scanned)
-            _isScanning.value = false
+            try {
+                _isScanning.value = true
+                val scanned = mediaScanner.scanAllMedia()
+                uploadManager.setAllMedia(scanned)
+            } catch (t: Throwable) {
+                t.printStackTrace()
+            } finally {
+                _isScanning.value = false
+            }
         }
     }
 

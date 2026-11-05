@@ -12,9 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.tastydrive.app.R
 import com.tastydrive.app.data.NetworkPreference
 import com.tastydrive.app.databinding.FragmentSettingsBinding
@@ -42,44 +45,51 @@ class SettingsFragment : Fragment() {
     }
 
     private fun loadCurrentSettings() {
+        val b = _binding ?: return
         val prefs = viewModel.prefs
 
         // Cloud Bot
-        binding.etBotToken.setText(prefs.cloudBotToken)
-        binding.etChannelId.setText(prefs.cloudChannelId)
+        b.etBotToken.setText(prefs.cloudBotToken)
+        b.etChannelId.setText(prefs.cloudChannelId)
 
         // Local Server
-        binding.etLocalServerUrl.setText(prefs.localServerUrl)
-        binding.cbSameTokenLocal.isChecked = prefs.useSameTokenForLocal
-        binding.layoutLocalCustomAuth.visibility = if (prefs.useSameTokenForLocal) View.GONE else View.VISIBLE
-        binding.etLocalBotToken.setText(prefs.localBotToken)
-        binding.etLocalChannelId.setText(prefs.localChannelId)
+        b.etLocalServerUrl.setText(prefs.localServerUrl)
+        b.cbSameTokenLocal.isChecked = prefs.useSameTokenForLocal
+        b.layoutLocalCustomAuth.visibility = if (prefs.useSameTokenForLocal) View.GONE else View.VISIBLE
+        b.etLocalBotToken.setText(prefs.localBotToken)
+        b.etLocalChannelId.setText(prefs.localChannelId)
 
         // Network preference
         when (prefs.networkPreference) {
-            NetworkPreference.BOTH -> binding.rbNetworkBoth.isChecked = true
-            NetworkPreference.WIFI_ONLY -> binding.rbNetworkWifi.isChecked = true
-            NetworkPreference.MOBILE_ONLY -> binding.rbNetworkMobile.isChecked = true
+            NetworkPreference.BOTH -> b.rbNetworkBoth.isChecked = true
+            NetworkPreference.WIFI_ONLY -> b.rbNetworkWifi.isChecked = true
+            NetworkPreference.MOBILE_ONLY -> b.rbNetworkMobile.isChecked = true
         }
 
         // Concurrency
         val concurrency = prefs.concurrency
-        binding.sliderConcurrency.value = concurrency.toFloat()
-        binding.tvConcurrencyDesc.text = "$concurrency files uploading at the same time"
+        b.sliderConcurrency.value = concurrency.toFloat()
+        b.tvConcurrencyDesc.text = "$concurrency files uploading at the same time"
 
-        binding.tvNativeStatus.text = viewModel.getNativeEngineInfo()
+        b.tvNativeStatus.text = viewModel.getNativeEngineInfo()
         updateHistoryCount()
 
         // Check live local server status
-        lifecycleScope.launch {
-            viewModel.isLocalConnected.collect { isConnected ->
-                if (prefs.localServerUrl.isNotBlank()) {
-                    if (isConnected) {
-                        binding.tvDiscoveryStatus.setTextColor(resources.getColor(R.color.status_green, null))
-                        binding.tvDiscoveryStatus.text = "Connected 🟢"
-                    } else {
-                        binding.tvDiscoveryStatus.setTextColor(resources.getColor(R.color.status_orange, null))
-                        binding.tvDiscoveryStatus.text = "Offline 🔴"
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isLocalConnected.collect { isConnected ->
+                    _binding?.let { bound ->
+                        context?.let { ctx ->
+                            if (prefs.localServerUrl.isNotBlank()) {
+                                if (isConnected) {
+                                    bound.tvDiscoveryStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_green))
+                                    bound.tvDiscoveryStatus.text = "Connected 🟢"
+                                } else {
+                                    bound.tvDiscoveryStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_orange))
+                                    bound.tvDiscoveryStatus.text = "Offline 🔴"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -87,97 +97,121 @@ class SettingsFragment : Fragment() {
     }
 
     private fun updateHistoryCount() {
-        val count = viewModel.prefs.getTotalUploadedCount()
-        binding.tvTotalUploadedHistory.text = "Total sent files recorded: $count"
+        _binding?.let { b ->
+            val count = viewModel.prefs.getTotalUploadedCount()
+            b.tvTotalUploadedHistory.text = "Total sent files recorded: $count"
+        }
     }
 
     private fun setupListeners() {
+        val b = _binding ?: return
+
         // --- 1. Test Cloud Bot Button ---
-        binding.btnTestBot.setOnClickListener {
-            val token = binding.etBotToken.text?.toString()?.trim() ?: ""
+        b.btnTestBot.setOnClickListener {
+            val bound = _binding ?: return@setOnClickListener
+            val token = bound.etBotToken.text?.toString()?.trim() ?: ""
             if (token.isEmpty()) {
-                binding.tvBotTestResult.text = "Please enter Cloud Bot token!"
+                bound.tvBotTestResult.text = "Please enter Cloud Bot token!"
                 return@setOnClickListener
             }
 
-            binding.tvBotTestResult.text = "Checking cloud bot..."
-            lifecycleScope.launch {
+            bound.tvBotTestResult.text = "Checking cloud bot..."
+            viewLifecycleOwner.lifecycleScope.launch {
                 when (val result = viewModel.testCloudBot(token)) {
                     is ApiResult.Success -> {
-                        binding.tvBotTestResult.setTextColor(resources.getColor(R.color.status_green, null))
-                        binding.tvBotTestResult.text = "✔ ${result.data}"
+                        _binding?.let { cur ->
+                            context?.let { ctx ->
+                                cur.tvBotTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.status_green))
+                                cur.tvBotTestResult.text = "✔ ${result.data}"
+                            }
+                        }
                     }
                     is ApiResult.Error -> {
-                        binding.tvBotTestResult.setTextColor(resources.getColor(R.color.status_red, null))
-                        binding.tvBotTestResult.text = "✖ ${result.message}"
+                        _binding?.let { cur ->
+                            context?.let { ctx ->
+                                cur.tvBotTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.status_red))
+                                cur.tvBotTestResult.text = "✖ ${result.message}"
+                            }
+                        }
                     }
                 }
             }
         }
 
         // --- 2. Auto-Discover Local PC on Wi-Fi Button ---
-        binding.btnAutoDiscoverLocal.setOnClickListener {
-            binding.btnAutoDiscoverLocal.isEnabled = false
-            binding.pbDiscoveringLocal.visibility = View.VISIBLE
-            binding.tvDiscoveryStatus.setTextColor(resources.getColor(R.color.primary_light, null))
-            binding.tvDiscoveryStatus.text = "Scanning Wi-Fi subnet..."
+        b.btnAutoDiscoverLocal.setOnClickListener {
+            val bound = _binding ?: return@setOnClickListener
+            bound.btnAutoDiscoverLocal.isEnabled = false
+            bound.pbDiscoveringLocal.visibility = View.VISIBLE
+            context?.let { ctx ->
+                bound.tvDiscoveryStatus.setTextColor(ContextCompat.getColor(ctx, R.color.primary_light))
+            }
+            bound.tvDiscoveryStatus.text = "Scanning Wi-Fi subnet..."
 
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 val result = viewModel.autoDiscoverLocalServer { checked, total ->
-                    val pct = if (total > 0) (checked * 100) / total else 0
-                    binding.tvDiscoveryStatus.text = "Scanning $pct%..."
+                    _binding?.let { cur ->
+                        val pct = if (total > 0) (checked * 100) / total else 0
+                        cur.tvDiscoveryStatus.text = "Scanning $pct%..."
+                    }
                 }
 
-                binding.btnAutoDiscoverLocal.isEnabled = true
-                binding.pbDiscoveringLocal.visibility = View.GONE
+                _binding?.let { cur ->
+                    cur.btnAutoDiscoverLocal.isEnabled = true
+                    cur.pbDiscoveringLocal.visibility = View.GONE
 
-                if (result != null) {
-                    binding.etLocalServerUrl.setText(result.url)
-                    binding.tvDiscoveryStatus.setTextColor(resources.getColor(R.color.status_green, null))
-                    binding.tvDiscoveryStatus.text = "✔ Found PC at ${result.ip}:${result.port}!"
-                    Toast.makeText(
-                        requireContext(),
-                        "🎉 Docker Local Server Found: ${result.url}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    context?.let { ctx ->
+                        if (result != null) {
+                            cur.etLocalServerUrl.setText(result.url)
+                            cur.tvDiscoveryStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_green))
+                            cur.tvDiscoveryStatus.text = "✔ Found PC at ${result.ip}:${result.port}!"
+                            Toast.makeText(
+                                ctx,
+                                "🎉 Docker Local Server Found: ${result.url}",
+                                Toast.LENGTH_LONG
+                            ).show()
 
-                    // Auto-test with current token
-                    testLocalServerConnection(result.url)
-                } else {
-                    binding.tvDiscoveryStatus.setTextColor(resources.getColor(R.color.status_red, null))
-                    binding.tvDiscoveryStatus.text = "PC not found on port 8081. Ensure Docker is running!"
-                    Toast.makeText(
-                        requireContext(),
-                        "Could not detect Docker on port 8081. Check if PC and phone are on same Wi-Fi!",
-                        Toast.LENGTH_LONG
-                    ).show()
+                            // Auto-test with current token
+                            testLocalServerConnection(result.url)
+                        } else {
+                            cur.tvDiscoveryStatus.setTextColor(ContextCompat.getColor(ctx, R.color.status_red))
+                            cur.tvDiscoveryStatus.text = "PC not found on port 8081. Ensure Docker is running!"
+                            Toast.makeText(
+                                ctx,
+                                "Could not detect Docker on port 8081. Check if PC and phone are on same Wi-Fi!",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
             }
         }
 
         // --- 3. Same Token Checkbox Listener ---
-        binding.cbSameTokenLocal.setOnCheckedChangeListener { _, isChecked ->
-            binding.layoutLocalCustomAuth.visibility = if (isChecked) View.GONE else View.VISIBLE
+        b.cbSameTokenLocal.setOnCheckedChangeListener { _, isChecked ->
+            _binding?.layoutLocalCustomAuth?.visibility = if (isChecked) View.GONE else View.VISIBLE
         }
 
         // --- 4. Test Local Server Button ---
-        binding.btnTestLocalServer.setOnClickListener {
-            val serverUrl = binding.etLocalServerUrl.text?.toString()?.trim() ?: ""
+        b.btnTestLocalServer.setOnClickListener {
+            val bound = _binding ?: return@setOnClickListener
+            val serverUrl = bound.etLocalServerUrl.text?.toString()?.trim() ?: ""
             if (serverUrl.isEmpty()) {
-                binding.tvLocalServerTestResult.text = "Enter Local Server URL or click Auto-Discover!"
+                bound.tvLocalServerTestResult.text = "Enter Local Server URL or click Auto-Discover!"
                 return@setOnClickListener
             }
             testLocalServerConnection(serverUrl)
         }
 
         // --- 5. Save All Settings Button ---
-        binding.btnSaveCredentials.setOnClickListener {
-            val cloudToken = binding.etBotToken.text?.toString()?.trim() ?: ""
-            val cloudChannel = binding.etChannelId.text?.toString()?.trim() ?: ""
-            val localUrl = binding.etLocalServerUrl.text?.toString()?.trim() ?: ""
-            val sameToken = binding.cbSameTokenLocal.isChecked
-            val localToken = binding.etLocalBotToken.text?.toString()?.trim() ?: ""
-            val localChannel = binding.etLocalChannelId.text?.toString()?.trim() ?: ""
+        b.btnSaveCredentials.setOnClickListener {
+            val bound = _binding ?: return@setOnClickListener
+            val cloudToken = bound.etBotToken.text?.toString()?.trim() ?: ""
+            val cloudChannel = bound.etChannelId.text?.toString()?.trim() ?: ""
+            val localUrl = bound.etLocalServerUrl.text?.toString()?.trim() ?: ""
+            val sameToken = bound.cbSameTokenLocal.isChecked
+            val localToken = bound.etLocalBotToken.text?.toString()?.trim() ?: ""
+            val localChannel = bound.etLocalChannelId.text?.toString()?.trim() ?: ""
 
             viewModel.prefs.cloudBotToken = cloudToken
             viewModel.prefs.cloudChannelId = cloudChannel
@@ -187,48 +221,54 @@ class SettingsFragment : Fragment() {
             viewModel.prefs.localChannelId = localChannel
 
             // Trigger immediate local server health check
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 viewModel.uploadManager.checkLocalServerHealth()
             }
 
-            Toast.makeText(
-                requireContext(),
-                "Settings saved! Dual Bot configuration updated. 🎉",
-                Toast.LENGTH_SHORT
-            ).show()
+            context?.let { ctx ->
+                Toast.makeText(
+                    ctx,
+                    "Settings saved! Dual Bot configuration updated. 🎉",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         // Network preference radio
-        binding.rgNetworkPref.setOnCheckedChangeListener { _, checkedId ->
+        b.rgNetworkPref.setOnCheckedChangeListener { _, checkedId ->
+            val bound = _binding ?: return@setOnCheckedChangeListener
             when (checkedId) {
-                binding.rbNetworkBoth.id -> viewModel.prefs.networkPreference = NetworkPreference.BOTH
-                binding.rbNetworkWifi.id -> viewModel.prefs.networkPreference = NetworkPreference.WIFI_ONLY
-                binding.rbNetworkMobile.id -> viewModel.prefs.networkPreference = NetworkPreference.MOBILE_ONLY
+                bound.rbNetworkBoth.id -> viewModel.prefs.networkPreference = NetworkPreference.BOTH
+                bound.rbNetworkWifi.id -> viewModel.prefs.networkPreference = NetworkPreference.WIFI_ONLY
+                bound.rbNetworkMobile.id -> viewModel.prefs.networkPreference = NetworkPreference.MOBILE_ONLY
             }
         }
 
         // Concurrency slider
-        binding.sliderConcurrency.addOnChangeListener { _, value, _ ->
+        b.sliderConcurrency.addOnChangeListener { _, value, _ ->
             val concurrency = value.toInt()
             viewModel.prefs.concurrency = concurrency
-            binding.tvConcurrencyDesc.text = "$concurrency files uploading at the same time"
+            _binding?.tvConcurrencyDesc?.text = "$concurrency files uploading at the same time"
         }
 
         // Battery Optimization
-        binding.btnIgnoreBattery.setOnClickListener {
+        b.btnIgnoreBattery.setOnClickListener {
             requestIgnoreBatteryOptimization()
         }
 
         // Reset History
-        binding.btnResetHistory.setOnClickListener {
-            AlertDialog.Builder(requireContext())
+        b.btnResetHistory.setOnClickListener {
+            val ctx = context ?: return@setOnClickListener
+            AlertDialog.Builder(ctx)
                 .setTitle("Reset Upload History?")
                 .setMessage("This will clear the record of uploaded files, allowing you to re-upload previously backed-up files.")
                 .setPositiveButton("Reset") { _, _ ->
                     viewModel.prefs.resetUploadedHistory()
                     viewModel.scanMedia()
                     updateHistoryCount()
-                    Toast.makeText(requireContext(), "Upload history reset!", Toast.LENGTH_SHORT).show()
+                    context?.let {
+                        Toast.makeText(it, "Upload history reset!", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
@@ -236,40 +276,54 @@ class SettingsFragment : Fragment() {
     }
 
     private fun testLocalServerConnection(serverUrl: String) {
-        val sameToken = binding.cbSameTokenLocal.isChecked
-        val token = if (sameToken || binding.etLocalBotToken.text.isNullOrBlank()) {
-            binding.etBotToken.text?.toString()?.trim() ?: ""
+        val bound = _binding ?: return
+        val sameToken = bound.cbSameTokenLocal.isChecked
+        val token = if (sameToken || bound.etLocalBotToken.text.isNullOrBlank()) {
+            bound.etBotToken.text?.toString()?.trim() ?: ""
         } else {
-            binding.etLocalBotToken.text?.toString()?.trim() ?: ""
+            bound.etLocalBotToken.text?.toString()?.trim() ?: ""
         }
 
         if (token.isEmpty()) {
-            binding.tvLocalServerTestResult.setTextColor(resources.getColor(R.color.status_orange, null))
-            binding.tvLocalServerTestResult.text = "Please enter a Bot Token to test!"
+            context?.let { ctx ->
+                bound.tvLocalServerTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.status_orange))
+            }
+            bound.tvLocalServerTestResult.text = "Please enter a Bot Token to test!"
             return
         }
 
-        binding.tvLocalServerTestResult.setTextColor(resources.getColor(R.color.primary_light, null))
-        binding.tvLocalServerTestResult.text = "Testing connection..."
+        context?.let { ctx ->
+            bound.tvLocalServerTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.primary_light))
+        }
+        bound.tvLocalServerTestResult.text = "Testing connection..."
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             when (val result = viewModel.testLocalServer(serverUrl, token)) {
                 is ApiResult.Success -> {
-                    binding.tvLocalServerTestResult.setTextColor(resources.getColor(R.color.status_green, null))
-                    binding.tvLocalServerTestResult.text = "✔ ${result.data} (Supports 2GB uploads!)"
+                    _binding?.let { cur ->
+                        context?.let { ctx ->
+                            cur.tvLocalServerTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.status_green))
+                            cur.tvLocalServerTestResult.text = "✔ ${result.data} (Supports 2GB uploads!)"
+                        }
+                    }
                 }
                 is ApiResult.Error -> {
-                    binding.tvLocalServerTestResult.setTextColor(resources.getColor(R.color.status_red, null))
-                    binding.tvLocalServerTestResult.text = "✖ ${result.message}"
+                    _binding?.let { cur ->
+                        context?.let { ctx ->
+                            cur.tvLocalServerTestResult.setTextColor(ContextCompat.getColor(ctx, R.color.status_red))
+                            cur.tvLocalServerTestResult.text = "✖ ${result.message}"
+                        }
+                    }
                 }
             }
         }
     }
 
     private fun requestIgnoreBatteryOptimization() {
+        val ctx = context ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = requireContext().getSystemService(Context.POWER_SERVICE) as PowerManager
-            val packageName = requireContext().packageName
+            val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val packageName = ctx.packageName
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
                 try {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
@@ -277,11 +331,15 @@ class SettingsFragment : Fragment() {
                     }
                     startActivity(intent)
                 } catch (e: Exception) {
-                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    startActivity(intent)
+                    try {
+                        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                        startActivity(intent)
+                    } catch (ex: Exception) {
+                        ex.printStackTrace()
+                    }
                 }
             } else {
-                Toast.makeText(requireContext(), "Battery optimization already disabled! ⚡", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, "Battery optimization already disabled! ⚡", Toast.LENGTH_SHORT).show()
             }
         }
     }

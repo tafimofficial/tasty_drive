@@ -86,7 +86,9 @@ class GalleryFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.galleryItems.collect { items ->
-                    adapter.submitList(items)
+                    _binding?.let {
+                        adapter.submitList(items)
+                    }
                 }
             }
         }

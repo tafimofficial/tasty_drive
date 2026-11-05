@@ -44,8 +44,8 @@ class MediaScanner(private val context: Context) {
             )?.use { cursor ->
                 extractMediaFromCursor(cursor, externalFilesUri, mediaMap, seenFileKeys)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            t.printStackTrace()
         }
 
         // 2. Ensure MediaStore Images are fully covered
@@ -67,8 +67,8 @@ class MediaScanner(private val context: Context) {
             )?.use { cursor ->
                 extractMediaFromCursor(cursor, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, mediaMap, seenFileKeys)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            t.printStackTrace()
         }
 
         // 3. Ensure MediaStore Videos are fully covered
@@ -90,8 +90,8 @@ class MediaScanner(private val context: Context) {
             )?.use { cursor ->
                 extractMediaFromCursor(cursor, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, mediaMap, seenFileKeys)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            t.printStackTrace()
         }
 
         // 4. Ensure MediaStore Audio is fully covered
@@ -113,20 +113,24 @@ class MediaScanner(private val context: Context) {
             )?.use { cursor ->
                 extractMediaFromCursor(cursor, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaMap, seenFileKeys)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            t.printStackTrace()
         }
 
         // 5. Scan common directories for standalone APKs, PDFs, Docs in Downloads & Documents folders
         try {
             scanDirectoryFallback(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), mediaMap, seenFileKeys)
             scanDirectoryFallback(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), mediaMap, seenFileKeys)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            t.printStackTrace()
         }
 
         val resultList = mediaMap.values.toMutableList()
-        resultList.sortByDescending { it.dateAdded }
+        try {
+            resultList.sortByDescending { it.dateAdded }
+        } catch (t: Throwable) {
+            t.printStackTrace()
+        }
         return@withContext resultList
     }
 
@@ -146,101 +150,125 @@ class MediaScanner(private val context: Context) {
         if (idCol == -1 || sizeCol == -1) return
 
         while (cursor.moveToNext()) {
-            val id = cursor.getLong(idCol)
-            val size = cursor.getLong(sizeCol)
-            if (size <= 0) continue
+            try {
+                val id = cursor.getLong(idCol)
+                val size = cursor.getLong(sizeCol)
+                if (size <= 0) continue
 
-            val path = if (pathCol != -1) cursor.getString(pathCol) else null
-            val rawName = if (nameCol != -1) cursor.getString(nameCol) else null
-            val name = rawName ?: (path?.let { File(it).name } ?: "file_$id")
+                val path = if (pathCol != -1) {
+                    try { cursor.getString(pathCol) } catch (_: Throwable) { null }
+                } else null
 
-            // Strict deduplication key: file name + size
-            val dedupeKey = "${name}_$size"
-            if (seenFileKeys.contains(dedupeKey)) {
+                val rawName = if (nameCol != -1) {
+                    try { cursor.getString(nameCol) } catch (_: Throwable) { null }
+                } else null
+
+                val name = rawName ?: (path?.let { File(it).name } ?: "file_$id")
+
+                // Strict deduplication key: file name + size
+                val dedupeKey = "${name}_$size"
+                if (seenFileKeys.contains(dedupeKey)) {
+                    continue
+                }
+                seenFileKeys.add(dedupeKey)
+
+                val rawMime = if (mimeCol != -1) {
+                    try { cursor.getString(mimeCol) } catch (_: Throwable) { null }
+                } else null
+
+                val mimeType = rawMime ?: getMimeTypeFromExtension(name)
+                val date = if (dateCol != -1) {
+                    try { cursor.getLong(dateCol) } catch (_: Throwable) { System.currentTimeMillis() / 1000 }
+                } else System.currentTimeMillis() / 1000
+
+                val category = MediaItem.determineCategory(name, mimeType)
+                val isVideo = category == FileCategory.VIDEOS
+                val contentUri = ContentUris.withAppendedId(baseUri, id)
+
+                val status = when {
+                    size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
+                    prefs.isUploaded(id, name, size) -> UploadStatus.COMPLETED
+                    else -> UploadStatus.QUEUED
+                }
+
+                outMap[id] = MediaItem(
+                    id = id,
+                    uri = contentUri,
+                    displayName = name,
+                    path = path,
+                    size = size,
+                    mimeType = mimeType,
+                    dateAdded = date,
+                    isVideo = isVideo,
+                    category = category,
+                    status = status
+                )
+            } catch (rowEx: Throwable) {
+                // Ignore any corrupt or permission-denied row and continue scanning others
                 continue
             }
-            seenFileKeys.add(dedupeKey)
-
-            val rawMime = if (mimeCol != -1) cursor.getString(mimeCol) else null
-            val mimeType = rawMime ?: getMimeTypeFromExtension(name)
-            val date = if (dateCol != -1) cursor.getLong(dateCol) else System.currentTimeMillis() / 1000
-
-            val category = MediaItem.determineCategory(name, mimeType)
-            val isVideo = category == FileCategory.VIDEOS
-            val contentUri = ContentUris.withAppendedId(baseUri, id)
-
-            val status = when {
-                size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
-                prefs.isUploaded(id, name, size) -> UploadStatus.COMPLETED
-                else -> UploadStatus.QUEUED
-            }
-
-            outMap[id] = MediaItem(
-                id = id,
-                uri = contentUri,
-                displayName = name,
-                path = path,
-                size = size,
-                mimeType = mimeType,
-                dateAdded = date,
-                isVideo = isVideo,
-                category = category,
-                status = status
-            )
         }
     }
 
     private fun scanDirectoryFallback(dir: File?, outMap: MutableMap<Long, MediaItem>, seenFileKeys: MutableSet<String>) {
-        if (dir == null || !dir.exists() || !dir.canRead()) return
-        val files = dir.listFiles() ?: return
+        try {
+            if (dir == null || !dir.exists() || !dir.canRead()) return
+            val files = dir.listFiles() ?: return
 
-        for (file in files) {
-            if (file.isDirectory) {
-                val subFiles = file.listFiles() ?: continue
-                for (sub in subFiles) {
-                    addFileIfEligible(sub, outMap, seenFileKeys)
-                }
-            } else {
-                addFileIfEligible(file, outMap, seenFileKeys)
+            for (file in files) {
+                try {
+                    if (file.isDirectory) {
+                        val subFiles = file.listFiles() ?: continue
+                        for (sub in subFiles) {
+                            try {
+                                addFileIfEligible(sub, outMap, seenFileKeys)
+                            } catch (_: Throwable) {}
+                        }
+                    } else {
+                        addFileIfEligible(file, outMap, seenFileKeys)
+                    }
+                } catch (_: Throwable) {}
             }
-        }
+        } catch (_: Throwable) {}
     }
 
     private fun addFileIfEligible(file: File, outMap: MutableMap<Long, MediaItem>, seenFileKeys: MutableSet<String>) {
-        if (!file.isFile || file.length() <= 0) return
-        val name = file.name
-        val size = file.length()
+        try {
+            if (!file.isFile || file.length() <= 0) return
+            val name = file.name
+            val size = file.length()
 
-        val dedupeKey = "${name}_$size"
-        if (seenFileKeys.contains(dedupeKey)) return
-        seenFileKeys.add(dedupeKey)
+            val dedupeKey = "${name}_$size"
+            if (seenFileKeys.contains(dedupeKey)) return
+            seenFileKeys.add(dedupeKey)
 
-        val path = file.absolutePath
-        val mimeType = getMimeTypeFromExtension(name)
-        val category = MediaItem.determineCategory(name, mimeType)
-        val isVideo = category == FileCategory.VIDEOS
+            val path = file.absolutePath
+            val mimeType = getMimeTypeFromExtension(name)
+            val category = MediaItem.determineCategory(name, mimeType)
+            val isVideo = category == FileCategory.VIDEOS
 
-        val syntheticId = (path.hashCode().toLong() and 0x7FFFFFFF) or 0x40000000
-        val uri = Uri.fromFile(file)
+            val syntheticId = (path.hashCode().toLong() and 0x7FFFFFFF) or 0x40000000
+            val uri = Uri.fromFile(file)
 
-        val status = when {
-            size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
-            prefs.isUploaded(syntheticId, name, size) -> UploadStatus.COMPLETED
-            else -> UploadStatus.QUEUED
-        }
+            val status = when {
+                size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
+                prefs.isUploaded(syntheticId, name, size) -> UploadStatus.COMPLETED
+                else -> UploadStatus.QUEUED
+            }
 
-        outMap[syntheticId] = MediaItem(
-            id = syntheticId,
-            uri = uri,
-            displayName = name,
-            path = path,
-            size = size,
-            mimeType = mimeType,
-            dateAdded = file.lastModified() / 1000,
-            isVideo = isVideo,
-            category = category,
-            status = status
-        )
+            outMap[syntheticId] = MediaItem(
+                id = syntheticId,
+                uri = uri,
+                displayName = name,
+                path = path,
+                size = size,
+                mimeType = mimeType,
+                dateAdded = file.lastModified() / 1000,
+                isVideo = isVideo,
+                category = category,
+                status = status
+            )
+        } catch (_: Throwable) {}
     }
 
     private fun getMimeTypeFromExtension(fileName: String): String {

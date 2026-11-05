@@ -82,53 +82,58 @@ class QueueFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.stats.collect { stats ->
-                        binding.tvCountUploaded.text = stats.completedCount.toString()
-                        binding.tvCountRemaining.text = stats.pendingCount.toString()
-                        binding.tvCountLarge.text = stats.oversizedCount.toString()
-                        binding.tvCountFailed.text = stats.failedCount.toString()
+                        _binding?.let { b ->
+                            b.tvCountUploaded.text = stats.completedCount.toString()
+                            b.tvCountRemaining.text = stats.pendingCount.toString()
+                            b.tvCountLarge.text = stats.oversizedCount.toString()
+                            b.tvCountFailed.text = stats.failedCount.toString()
 
-                        binding.tvLiveSpeed.text = if (stats.isUploading) "🚀 ${stats.currentSpeedStr}" else "💤 Idle"
-                        binding.pbOverall.progress = stats.progressPercent
+                            b.tvLiveSpeed.text = if (stats.isUploading) "🚀 ${stats.currentSpeedStr}" else "💤 Idle"
+                            b.pbOverall.progress = stats.progressPercent
 
-                        if (stats.failedCount > 0) {
-                            binding.btnRetryFailed.visibility = View.VISIBLE
-                        } else {
-                            binding.btnRetryFailed.visibility = View.GONE
-                        }
+                            b.btnRetryFailed.visibility = if (stats.failedCount > 0) View.VISIBLE else View.GONE
 
-                        if (stats.isPaused) {
-                            binding.btnStartResume.text = "▶ Resume Uploads"
-                        } else if (stats.isUploading) {
-                            binding.btnStartResume.text = "⚡ Uploading..."
-                        } else {
-                            binding.btnStartResume.text = "🚀 Start Uploads"
+                            if (stats.isPaused) {
+                                b.btnStartResume.text = "▶ Resume Uploads"
+                            } else if (stats.isUploading) {
+                                b.btnStartResume.text = "⚡ Uploading..."
+                            } else {
+                                b.btnStartResume.text = "🚀 Start Uploads"
+                            }
                         }
                     }
                 }
 
                 launch {
                     viewModel.queueItems.collect { items ->
-                        adapter.submitList(items)
-                        val totalPending = viewModel.stats.value.pendingCount
-                        if (totalPending > items.size) {
-                            binding.tvQueueTitle.text = "Active Queue (Next ${items.size} of $totalPending pending)"
-                        } else {
-                            binding.tvQueueTitle.text = "Active Queue & Recent (${items.size})"
+                        _binding?.let { b ->
+                            adapter.submitList(items)
+                            val totalPending = viewModel.stats.value.pendingCount
+                            if (totalPending > items.size) {
+                                b.tvQueueTitle.text = "Active Queue (Next ${items.size} of $totalPending pending)"
+                            } else {
+                                b.tvQueueTitle.text = "Active Queue & Recent (${items.size})"
+                            }
+                            b.layoutEmptyQueue.visibility = if (items.isEmpty() && totalPending == 0) View.VISIBLE else View.GONE
                         }
-                        binding.layoutEmptyQueue.visibility = if (items.isEmpty() && totalPending == 0) View.VISIBLE else View.GONE
                     }
                 }
 
                 launch {
                     viewModel.isScanning.collect { isScanning ->
-                        binding.swipeRefresh.isRefreshing = isScanning
+                        _binding?.let { b ->
+                            b.swipeRefresh.isRefreshing = isScanning
+                        }
                     }
                 }
 
                 launch {
-                    val networkDesc = NetworkHelper.getInstance(requireContext()).getNetworkStatusDescription()
                     viewModel.localServerStatusText.collect { localStatus ->
-                        binding.tvNetworkInfo.text = "Network: $networkDesc • $localStatus"
+                        _binding?.let { b ->
+                            val ctx = context ?: return@collect
+                            val networkDesc = NetworkHelper.getInstance(ctx).getNetworkStatusDescription()
+                            b.tvNetworkInfo.text = "Network: $networkDesc • $localStatus"
+                        }
                     }
                 }
             }

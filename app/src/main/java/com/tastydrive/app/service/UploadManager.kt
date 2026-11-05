@@ -76,17 +76,21 @@ class UploadManager private constructor(private val context: Context) {
     }
 
     fun setAllMedia(items: List<MediaItem>) {
-        allMediaMap.clear()
-        for (item in items) {
-            allMediaMap[item.id] = item
+        synchronized(allMediaMap) {
+            allMediaMap.clear()
+            for (item in items) {
+                allMediaMap[item.id] = item
+            }
         }
         publishItems()
         recalculateStats()
     }
 
     fun enqueueAllPending() {
-        val pending = allMediaMap.values.filter {
-            it.status == UploadStatus.QUEUED || it.status == UploadStatus.PAUSED || it.status == UploadStatus.FAILED
+        val pending = synchronized(allMediaMap) {
+            allMediaMap.values.filter {
+                it.status == UploadStatus.QUEUED || it.status == UploadStatus.PAUSED || it.status == UploadStatus.FAILED
+            }
         }
         if (pending.isNotEmpty()) {
             for (p in pending) {
@@ -295,9 +299,11 @@ class UploadManager private constructor(private val context: Context) {
     }
 
     fun resumeUploads() {
-        for (item in allMediaMap.values) {
-            if (item.status == UploadStatus.PAUSED) {
-                item.status = UploadStatus.QUEUED
+        synchronized(allMediaMap) {
+            for (item in allMediaMap.values) {
+                if (item.status == UploadStatus.PAUSED) {
+                    item.status = UploadStatus.QUEUED
+                }
             }
         }
         publishItems()
@@ -311,10 +317,12 @@ class UploadManager private constructor(private val context: Context) {
     }
 
     fun retryFailed() {
-        for (item in allMediaMap.values) {
-            if (item.status == UploadStatus.FAILED) {
-                item.status = UploadStatus.QUEUED
-                item.errorMessage = null
+        synchronized(allMediaMap) {
+            for (item in allMediaMap.values) {
+                if (item.status == UploadStatus.FAILED) {
+                    item.status = UploadStatus.QUEUED
+                    item.errorMessage = null
+                }
             }
         }
         publishItems()
@@ -407,7 +415,10 @@ class UploadManager private constructor(private val context: Context) {
     }
 
     private fun publishItems() {
-        _itemsFlow.value = allMediaMap.values.toList()
+        val list = synchronized(allMediaMap) {
+            allMediaMap.values.toList()
+        }
+        _itemsFlow.value = list
     }
 
     private fun publishItemsThrottled(force: Boolean = false) {
@@ -419,7 +430,9 @@ class UploadManager private constructor(private val context: Context) {
     }
 
     fun recalculateStats() {
-        val items = allMediaMap.values
+        val items = synchronized(allMediaMap) {
+            allMediaMap.values.toList()
+        }
         val total = items.size
         var completed = 0
         var oversized = 0

@@ -204,25 +204,35 @@ class LargeFilesFragment : Fragment() {
                 // Collect large files
                 launch {
                     viewModel.largeFiles.collect { files ->
-                        adapter.submitList(files)
-                        binding.tvLargeCountBadge.text = "${files.size} Files"
-                        binding.layoutEmptyLarge.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
-                        binding.rvLargeFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
-                        updateSelectionState(adapter.getSelectedItems().size)
+                        _binding?.let { b ->
+                            adapter.submitList(files)
+                            b.tvLargeCountBadge.text = "${files.size} Files"
+                            b.layoutEmptyLarge.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+                            b.rvLargeFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
+                            updateSelectionState(adapter.getSelectedItems().size)
+                        }
                     }
                 }
 
                 // Collect local docker server status
                 launch {
                     viewModel.isLocalConnected.collect { isConnected ->
-                        if (isConnected) {
-                            binding.tvLocalDockerStatusInLarge.setTextColor(resources.getColor(R.color.status_green, null))
-                            binding.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Connected 🟢 (Auto-Upload Active up to 2GB!)"
-                            binding.btnUploadViaLocalDocker.visibility = View.VISIBLE
-                        } else {
-                            binding.tvLocalDockerStatusInLarge.setTextColor(resources.getColor(R.color.status_orange, null))
-                            binding.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Offline 🔴 (Queued files wait for PC)"
-                            binding.btnUploadViaLocalDocker.visibility = View.GONE
+                        _binding?.let { b ->
+                            context?.let { ctx ->
+                                if (isConnected) {
+                                    b.tvLocalDockerStatusInLarge.setTextColor(
+                                        androidx.core.content.ContextCompat.getColor(ctx, R.color.status_green)
+                                    )
+                                    b.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Connected 🟢 (Auto-Upload Active up to 2GB!)"
+                                    b.btnUploadViaLocalDocker.visibility = View.VISIBLE
+                                } else {
+                                    b.tvLocalDockerStatusInLarge.setTextColor(
+                                        androidx.core.content.ContextCompat.getColor(ctx, R.color.status_orange)
+                                    )
+                                    b.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Offline 🔴 (Queued files wait for PC)"
+                                    b.btnUploadViaLocalDocker.visibility = View.GONE
+                                }
+                            }
                         }
                     }
                 }
