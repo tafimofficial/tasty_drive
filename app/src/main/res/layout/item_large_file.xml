@@ -11,12 +11,22 @@
     android:gravity="center_vertical"
     android:padding="12dp">
 
-    <!-- Checkbox -->
+    <!-- Checkbox for pending / unuploaded items -->
     <CheckBox
         android:id="@+id/cbSelectLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:buttonTint="@color/primary" />
+
+    <!-- Uploaded Checkmark Badge (shown when item is already uploaded) -->
+    <ImageView
+        android:id="@+id/ivLargeCompleted"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:src="@drawable/ic_check_circle"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="6dp"
+        android:visibility="gone" />
 
     <!-- Thumbnail or Category Icon -->
     <androidx.cardview.widget.CardView
@@ -82,7 +92,7 @@
 
     </LinearLayout>
 
-    <!-- Size Badge -->
+    <!-- Status / Size Badge -->
     <TextView
         android:id="@+id/tvLargeSizeBadge"
         android:layout_width="wrap_content"

@@ -91,7 +91,7 @@
                     android:id="@+id/cbSelectAll"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Select All Files"
+                    android:text="Select All Remaining Files"
                     android:textColor="@color/white"
                     android:textSize="13sp"
                     android:buttonTint="@color/primary" />
@@ -112,6 +112,50 @@
 
         </LinearLayout>
 
+        <!-- Filter Chips: Pending (বাকিগুলো) / All Large / Uploaded -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupLargeFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLargePending"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="⏳ Pending (বাকিগুলো)"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/surface_dark" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLargeAll"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📁 All Large"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/surface_dark" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLargeUploaded"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡ Uploaded (সম্পন্ন)"
+                    android:textColor="@color/white"
+                    app:chipBackgroundColor="@color/surface_dark" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
         <!-- Empty State for Large Files -->
         <LinearLayout
             android:id="@+id/layoutEmptyLarge"
@@ -130,18 +174,20 @@
                 android:alpha="0.8" />
 
             <TextView
+                android:id="@+id/tvEmptyLargeTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="No Oversized Files Found! 🎉"
+                android:text="No Pending Large Files! 🎉"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:layout_marginTop="12dp" />
 
             <TextView
+                android:id="@+id/tvEmptyLargeSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="All your photos and videos are within the 50 MB limit and can be uploaded directly via Tasty Drive Bot."
+                android:text="All large files are either backed up or none found over 50MB."
                 android:textColor="@color/white_70"
                 android:textSize="12sp"
                 android:gravity="center"
@@ -154,7 +200,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:clipToPadding="false"
             android:paddingBottom="120dp" />
 

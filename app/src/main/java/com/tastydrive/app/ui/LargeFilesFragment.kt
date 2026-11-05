@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -15,15 +16,25 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tastydrive.app.R
 import com.tastydrive.app.data.MediaItem
+import com.tastydrive.app.data.UploadStatus
 import com.tastydrive.app.databinding.FragmentLargeFilesBinding
 import com.tastydrive.app.util.TelegramShareHelper
 import kotlinx.coroutines.launch
+
+enum class LargeFilesFilter {
+    PENDING,
+    ALL,
+    UPLOADED
+}
 
 class LargeFilesFragment : Fragment() {
     private var _binding: FragmentLargeFilesBinding? = null
     private val binding get() = _binding!!
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var adapter: LargeFilesAdapter
+
+    private var currentFilter = LargeFilesFilter.PENDING
+    private var allLargeFilesList: List<MediaItem> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +48,7 @@ class LargeFilesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
+        setupFilters()
         setupListeners()
         observeData()
     }
@@ -47,11 +59,26 @@ class LargeFilesFragment : Fragment() {
                 updateSelectionState(selectedCount)
             },
             onItemClick = { item ->
-                // Handled in adapter
+                // Click handled in adapter
             }
         )
         binding.rvLargeFiles.layoutManager = LinearLayoutManager(requireContext())
         binding.rvLargeFiles.adapter = adapter
+    }
+
+    private fun setupFilters() {
+        binding.chipLargePending.setOnClickListener {
+            currentFilter = LargeFilesFilter.PENDING
+            applyCurrentFilter()
+        }
+        binding.chipLargeAll.setOnClickListener {
+            currentFilter = LargeFilesFilter.ALL
+            applyCurrentFilter()
+        }
+        binding.chipLargeUploaded.setOnClickListener {
+            currentFilter = LargeFilesFilter.UPLOADED
+            applyCurrentFilter()
+        }
     }
 
     private fun setupListeners() {
@@ -106,23 +133,78 @@ class LargeFilesFragment : Fragment() {
         }
     }
 
-    private fun updateSelectionState(selectedCount: Int) {
-        val totalLarge = adapter.currentList.size
-        binding.tvSelectedStats.text = "$selectedCount of $totalLarge selected"
+    private fun applyCurrentFilter() {
+        val b = _binding ?: return
+        val pendingCount = allLargeFilesList.count { it.status != UploadStatus.COMPLETED }
+        val uploadedCount = allLargeFilesList.count { it.status == UploadStatus.COMPLETED }
+        val totalCount = allLargeFilesList.size
 
-        binding.btnUploadViaLocalDocker.text = if (selectedCount > 0) {
+        b.tvLargeCountBadge.text = "$pendingCount Remaining • $uploadedCount Uploaded"
+        b.chipLargePending.text = "⏳ Pending ($pendingCount)"
+        b.chipLargeAll.text = "📁 All ($totalCount)"
+        b.chipLargeUploaded.text = "⚡ Uploaded ($uploadedCount)"
+
+        val filtered = when (currentFilter) {
+            LargeFilesFilter.PENDING -> allLargeFilesList.filter { it.status != UploadStatus.COMPLETED }
+            LargeFilesFilter.ALL -> allLargeFilesList
+            LargeFilesFilter.UPLOADED -> allLargeFilesList.filter { it.status == UploadStatus.COMPLETED }
+        }
+
+        adapter.submitList(filtered)
+
+        val isEmpty = filtered.isEmpty()
+        b.layoutEmptyLarge.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        b.rvLargeFiles.visibility = if (isEmpty) View.GONE else View.VISIBLE
+
+        if (isEmpty) {
+            when (currentFilter) {
+                LargeFilesFilter.PENDING -> {
+                    b.tvEmptyLargeTitle.text = if (uploadedCount > 0) "All Remaining Files Uploaded! 🎉" else "No Large Files Found! 📁"
+                    b.tvEmptyLargeSubtitle.text = if (uploadedCount > 0) {
+                        "All $uploadedCount large files are uploaded! View them in '⚡ Uploaded' tab."
+                    } else {
+                        "All your photos and videos are within 50MB and can be uploaded directly."
+                    }
+                }
+                LargeFilesFilter.UPLOADED -> {
+                    b.tvEmptyLargeTitle.text = "No Uploaded Large Files Yet ⏳"
+                    b.tvEmptyLargeSubtitle.text = "Select files in 'Pending' and upload via Local Docker or Share to Telegram."
+                }
+                LargeFilesFilter.ALL -> {
+                    b.tvEmptyLargeTitle.text = "No Files Over 50MB 📁"
+                    b.tvEmptyLargeSubtitle.text = "All your media files are within the 50MB cloud limit."
+                }
+            }
+        }
+
+        b.cbSelectAll.isEnabled = pendingCount > 0 && currentFilter != LargeFilesFilter.UPLOADED
+        b.cbSelectAll.text = if (currentFilter == LargeFilesFilter.UPLOADED) {
+            "All $uploadedCount Files Uploaded ⚡"
+        } else {
+            "Select All Remaining ($pendingCount)"
+        }
+
+        updateSelectionState(adapter.getSelectedItems().size)
+    }
+
+    private fun updateSelectionState(selectedCount: Int) {
+        val b = _binding ?: return
+        val pendingCount = allLargeFilesList.count { it.status != UploadStatus.COMPLETED }
+        b.tvSelectedStats.text = "$selectedCount of $pendingCount selected"
+
+        b.btnUploadViaLocalDocker.text = if (selectedCount > 0) {
             "💻 Upload $selectedCount Files via Local Docker"
         } else {
             "💻 Upload via Local Docker API"
         }
-        binding.btnUploadViaLocalDocker.isEnabled = selectedCount > 0
+        b.btnUploadViaLocalDocker.isEnabled = selectedCount > 0
 
-        binding.btnShareToTelegram.text = if (selectedCount > 0) {
+        b.btnShareToTelegram.text = if (selectedCount > 0) {
             "🚀 Share $selectedCount Files to Telegram"
         } else {
             "🚀 Share Files to Telegram App"
         }
-        binding.btnShareToTelegram.isEnabled = selectedCount > 0
+        b.btnShareToTelegram.isEnabled = selectedCount > 0
     }
 
     private fun shareToTelegram(items: List<MediaItem>, preferDirect: Boolean) {
@@ -159,12 +241,14 @@ class LargeFilesFragment : Fragment() {
                 launchSystemChooser(batchToShare)
             }
 
-            // If we successfully triggered the batch, uncheck shared items so user can send remaining easily
-            if (isBatchLimited) {
-                batchToShare.forEach { it.isSelected = false }
-                adapter.notifyDataSetChanged()
-                updateSelectionState(adapter.getSelectedItems().size)
+            // Mark shared items as completed and record in upload history
+            for (sharedItem in batchToShare) {
+                sharedItem.status = UploadStatus.COMPLETED
+                sharedItem.isSelected = false
+                viewModel.prefs.markUploaded(sharedItem.id, sharedItem.displayName, sharedItem.size)
             }
+            viewModel.uploadManager.recalculateStats()
+            applyCurrentFilter()
 
         } catch (e: ActivityNotFoundException) {
             launchSystemChooser(batchToShare)
@@ -204,13 +288,8 @@ class LargeFilesFragment : Fragment() {
                 // Collect large files
                 launch {
                     viewModel.largeFiles.collect { files ->
-                        _binding?.let { b ->
-                            adapter.submitList(files)
-                            b.tvLargeCountBadge.text = "${files.size} Files"
-                            b.layoutEmptyLarge.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
-                            b.rvLargeFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
-                            updateSelectionState(adapter.getSelectedItems().size)
-                        }
+                        allLargeFilesList = files
+                        applyCurrentFilter()
                     }
                 }
 
@@ -221,13 +300,13 @@ class LargeFilesFragment : Fragment() {
                             context?.let { ctx ->
                                 if (isConnected) {
                                     b.tvLocalDockerStatusInLarge.setTextColor(
-                                        androidx.core.content.ContextCompat.getColor(ctx, R.color.status_green)
+                                        ContextCompat.getColor(ctx, R.color.status_green)
                                     )
                                     b.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Connected 🟢 (Auto-Upload Active up to 2GB!)"
                                     b.btnUploadViaLocalDocker.visibility = View.VISIBLE
                                 } else {
                                     b.tvLocalDockerStatusInLarge.setTextColor(
-                                        androidx.core.content.ContextCompat.getColor(ctx, R.color.status_orange)
+                                        ContextCompat.getColor(ctx, R.color.status_orange)
                                     )
                                     b.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Offline 🔴 (Queued files wait for PC)"
                                     b.btnUploadViaLocalDocker.visibility = View.GONE
