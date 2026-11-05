@@ -124,6 +124,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         uploadManager.retryFailed()
     }
 
+    fun clearFailed() {
+        uploadManager.clearFailed()
+    }
+
+    fun clearSingleFailed(item: MediaItem) {
+        uploadManager.clearSingleFailed(item)
+    }
+
     fun enqueueSingleItem(item: MediaItem) {
         uploadManager.enqueueSingle(item)
     }

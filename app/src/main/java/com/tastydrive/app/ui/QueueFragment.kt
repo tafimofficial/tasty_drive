@@ -41,7 +41,21 @@ class QueueFragment : Fragment() {
 
     private fun setupRecyclerView() {
         adapter = QueueAdapter { item ->
-            if (item.status == UploadStatus.FAILED || item.status == UploadStatus.PAUSED) {
+            if (item.status == UploadStatus.FAILED) {
+                androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle("Failed File: ${item.displayName}")
+                    .setMessage(item.errorMessage ?: "This file could not be read or uploaded.")
+                    .setPositiveButton("🔄 Retry") { _, _ ->
+                        viewModel.enqueueSingleItem(item)
+                        Toast.makeText(requireContext(), "Retrying ${item.displayName}", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("🗑️ Clear / Ignore") { _, _ ->
+                        viewModel.clearSingleFailed(item)
+                        Toast.makeText(requireContext(), "Ignored ${item.displayName}", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNeutralButton("Cancel", null)
+                    .show()
+            } else if (item.status == UploadStatus.PAUSED) {
                 viewModel.enqueueSingleItem(item)
                 Toast.makeText(requireContext(), "Queued ${item.displayName}", Toast.LENGTH_SHORT).show()
             }
@@ -75,6 +89,18 @@ class QueueFragment : Fragment() {
         binding.btnRetryFailed.setOnClickListener {
             viewModel.retryFailed()
         }
+
+        binding.btnClearFailed.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Clear All Failed Files?")
+                .setMessage("This will remove all inaccessible or corrupt files (such as restricted WhatsApp databases or deleted cache) from the failed queue.")
+                .setPositiveButton("Clear All") { _, _ ->
+                    viewModel.clearFailed()
+                    Toast.makeText(requireContext(), "All failed items cleared!", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
     }
 
     private fun observeData() {
@@ -91,7 +117,7 @@ class QueueFragment : Fragment() {
                             b.tvLiveSpeed.text = if (stats.isUploading) "🚀 ${stats.currentSpeedStr}" else "💤 Idle"
                             b.pbOverall.progress = stats.progressPercent
 
-                            b.btnRetryFailed.visibility = if (stats.failedCount > 0) View.VISIBLE else View.GONE
+                            b.layoutFailedActions.visibility = if (stats.failedCount > 0) View.VISIBLE else View.GONE
 
                             if (stats.isPaused) {
                                 b.btnStartResume.text = "▶ Resume Uploads"

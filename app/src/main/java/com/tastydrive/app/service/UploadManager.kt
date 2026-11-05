@@ -158,25 +158,17 @@ class UploadManager private constructor(private val context: Context) {
                     val candidate = allMediaMap.values.firstOrNull { item ->
                         if (item.status != UploadStatus.QUEUED || item.isOver2GB) return@firstOrNull false
 
-                        if (item.isOver50MB) {
-                            // > 50MB files REQUIRE Local Docker API server
-                            hasLocal
+                        if (hasLocal) {
+                            // When Local Docker is connected: ALL files (both <=50MB and >50MB) go via Local!
+                            true
                         } else {
-                            // <= 50MB files can use Cloud OR Local API
-                            hasCloud || hasLocal
+                            // When Local Docker is offline: <=50MB files go via Cloud; >50MB wait in queue!
+                            hasCloud && !item.isOver50MB
                         }
                     }
 
                     candidate?.let { item ->
-                        val endpoint = when {
-                            item.isOver50MB -> ApiEndpointType.LOCAL
-                            hasCloud && hasLocal -> {
-                                // Balance load across both Cloud and Local APIs
-                                if (roundRobinCounter.incrementAndGet() % 2 == 0) ApiEndpointType.LOCAL else ApiEndpointType.CLOUD
-                            }
-                            hasLocal -> ApiEndpointType.LOCAL
-                            else -> ApiEndpointType.CLOUD
-                        }
+                        val endpoint = if (hasLocal) ApiEndpointType.LOCAL else ApiEndpointType.CLOUD
 
                         item.status = UploadStatus.UPLOADING
                         item.progress = 0
@@ -328,6 +320,27 @@ class UploadManager private constructor(private val context: Context) {
         publishItems()
         recalculateStats()
         startUploadProcess()
+    }
+
+    fun clearFailed() {
+        synchronized(allMediaMap) {
+            val failedItems = allMediaMap.values.filter { it.status == UploadStatus.FAILED }
+            for (item in failedItems) {
+                prefs.markUploaded(item.id, item.displayName, item.size)
+                allMediaMap.remove(item.id)
+            }
+        }
+        publishItems()
+        recalculateStats()
+    }
+
+    fun clearSingleFailed(item: MediaItem) {
+        synchronized(allMediaMap) {
+            prefs.markUploaded(item.id, item.displayName, item.size)
+            allMediaMap.remove(item.id)
+        }
+        publishItems()
+        recalculateStats()
     }
 
     // --- Local Server Management & Background Discovery ---

@@ -164,6 +164,7 @@ class MediaScanner(private val context: Context) {
                 } else null
 
                 val name = rawName ?: (path?.let { File(it).name } ?: "file_$id")
+                if (isJunkOrInaccessible(path, name, size)) continue
 
                 // Strict deduplication key: file name + size
                 val dedupeKey = "${name}_$size"
@@ -237,12 +238,13 @@ class MediaScanner(private val context: Context) {
             if (!file.isFile || file.length() <= 0) return
             val name = file.name
             val size = file.length()
+            val path = file.absolutePath
+
+            if (isJunkOrInaccessible(path, name, size)) return
 
             val dedupeKey = "${name}_$size"
             if (seenFileKeys.contains(dedupeKey)) return
             seenFileKeys.add(dedupeKey)
-
-            val path = file.absolutePath
             val mimeType = getMimeTypeFromExtension(name)
             val category = MediaItem.determineCategory(name, mimeType)
             val isVideo = category == FileCategory.VIDEOS
@@ -269,6 +271,36 @@ class MediaScanner(private val context: Context) {
                 status = status
             )
         } catch (_: Throwable) {}
+    }
+
+    private fun isJunkOrInaccessible(path: String?, name: String, size: Long): Boolean {
+        if (size <= 0) return true
+        if (name.startsWith(".") || name.endsWith(".tmp", ignoreCase = true) || name.endsWith(".nomedia", ignoreCase = true)) {
+            return true
+        }
+        if (!path.isNullOrEmpty()) {
+            val lower = path.lowercase()
+            if (lower.contains("/.trash/") ||
+                lower.contains("/.statuses/") ||
+                lower.contains("/whatsapp/databases/") ||
+                lower.contains("/whatsapp/.shared/") ||
+                lower.contains("/whatsapp/backups/") ||
+                lower.contains("/.thumbnails/") ||
+                lower.contains("/android/data/") ||
+                lower.contains("/android/obb/")
+            ) {
+                return true
+            }
+            try {
+                val f = File(path)
+                if (f.exists() && !f.canRead()) {
+                    return true
+                }
+            } catch (_: Throwable) {
+                return true
+            }
+        }
+        return false
     }
 
     private fun getMimeTypeFromExtension(fileName: String): String {
