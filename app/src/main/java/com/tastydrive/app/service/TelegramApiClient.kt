@@ -23,22 +23,26 @@ sealed class ApiResult<out T> {
 }
 
 class TelegramApiClient(private val context: Context) {
+
+    // OkHttpClient with generous timeouts to support multi-gigabyte local docker uploads
     private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(180, TimeUnit.SECONDS)
-        .writeTimeout(180, TimeUnit.SECONDS)
+        .connectTimeout(45, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.MINUTES)
+        .writeTimeout(30, TimeUnit.MINUTES)
         .retryOnConnectionFailure(true)
         .build()
 
-    private val baseUrl = "https://api.telegram.org/bot"
-
-    suspend fun testConnection(token: String): ApiResult<String> = withContext(Dispatchers.IO) {
+    suspend fun testConnection(
+        token: String,
+        baseUrl: String = CLOUD_API_BASE
+    ): ApiResult<String> = withContext(Dispatchers.IO) {
         val cleanToken = token.trim()
         if (cleanToken.isEmpty()) {
             return@withContext ApiResult.Error("Bot Token is empty!")
         }
 
-        val url = "$baseUrl$cleanToken/getMe"
+        val formattedBase = normalizeBaseUrl(baseUrl)
+        val url = "$formattedBase$cleanToken/getMe"
         val request = Request.Builder().url(url).get().build()
 
         try {
@@ -50,24 +54,29 @@ class TelegramApiClient(private val context: Context) {
                         val result = json.getAsJsonObject("result")
                         val username = result.get("username")?.asString ?: "Unknown"
                         val firstName = result.get("first_name")?.asString ?: "Bot"
-                        return@withContext ApiResult.Success("Bot Connected: $firstName (@$username)")
+                        return@withContext ApiResult.Success("Connected: $firstName (@$username)")
                     }
                 }
-                return@withContext ApiResult.Error("Invalid Bot Token or response: $bodyStr", response.code)
+                return@withContext ApiResult.Error("Invalid response from server: $bodyStr", response.code)
             }
         } catch (e: Exception) {
             return@withContext ApiResult.Error("Network error: ${e.localizedMessage}")
         }
     }
 
-    suspend fun testChannel(token: String, channelId: String): ApiResult<String> = withContext(Dispatchers.IO) {
+    suspend fun testChannel(
+        token: String,
+        channelId: String,
+        baseUrl: String = CLOUD_API_BASE
+    ): ApiResult<String> = withContext(Dispatchers.IO) {
         val cleanToken = token.trim()
         val cleanChatId = channelId.trim()
         if (cleanToken.isEmpty() || cleanChatId.isEmpty()) {
             return@withContext ApiResult.Error("Token or Channel ID is missing!")
         }
 
-        val url = "$baseUrl$cleanToken/getChat?chat_id=$cleanChatId"
+        val formattedBase = normalizeBaseUrl(baseUrl)
+        val url = "$formattedBase$cleanToken/getChat?chat_id=$cleanChatId"
         val request = Request.Builder().url(url).get().build()
 
         try {
@@ -95,10 +104,16 @@ class TelegramApiClient(private val context: Context) {
         token: String,
         channelId: String,
         item: MediaItem,
+        baseUrl: String = CLOUD_API_BASE,
+        isLocalApi: Boolean = false,
         onProgress: (percent: Int, bytesWritten: Long, totalBytes: Long) -> Unit
     ): ApiResult<Boolean> = withContext(Dispatchers.IO) {
-        if (item.isOver50MB) {
-            return@withContext ApiResult.Error("File is > 50MB. Telegram Bot API limit exceeded! Share directly via Telegram app in Large Files tab.")
+        // Enforce file size constraints
+        if (!isLocalApi && item.isOver50MB) {
+            return@withContext ApiResult.Error("File is > 50MB. Official Telegram Cloud Bot API limit is 50MB. Waiting for Local Docker API or share via Telegram App.")
+        }
+        if (isLocalApi && item.isOver2GB) {
+            return@withContext ApiResult.Error("File is > 2000MB (2GB). Telegram's maximum file size limit is 2GB.")
         }
 
         val cleanToken = token.trim()
@@ -130,7 +145,8 @@ class TelegramApiClient(private val context: Context) {
         )
 
         val sizeFormatted = NativeEngine.safeFormatFileSize(item.size)
-        val caption = "Tasty Drive Backup: ${item.displayName} (${sizeFormatted})"
+        val apiTag = if (isLocalApi) "[Local Docker 🚀]" else "[Cloud ☁️]"
+        val caption = "Tasty Drive $apiTag: ${item.displayName} (${sizeFormatted})"
 
         val multipartBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -142,8 +158,11 @@ class TelegramApiClient(private val context: Context) {
                 countingBody
             )
 
+        val formattedBase = normalizeBaseUrl(baseUrl)
+        val url = "$formattedBase$cleanToken/sendDocument"
+
         val request = Request.Builder()
-            .url("$baseUrl$cleanToken/sendDocument")
+            .url(url)
             .post(multipartBuilder.build())
             .build()
 
@@ -192,5 +211,22 @@ class TelegramApiClient(private val context: Context) {
             return@withContext ApiResult.Error("Upload error: ${e.localizedMessage}")
         }
     }
-}
 
+    companion object {
+        const val CLOUD_API_BASE = "https://api.telegram.org/bot"
+
+        fun normalizeBaseUrl(serverUrl: String): String {
+            val trimmed = serverUrl.trim()
+            if (trimmed.isEmpty() || trimmed.equals(CLOUD_API_BASE, ignoreCase = true)) {
+                return CLOUD_API_BASE
+            }
+
+            var clean = trimmed
+            if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
+                clean = "http://$clean"
+            }
+            clean = clean.removeSuffix("/")
+            return if (clean.endsWith("/bot")) "$clean" else "$clean/bot"
+        }
+    }
+}

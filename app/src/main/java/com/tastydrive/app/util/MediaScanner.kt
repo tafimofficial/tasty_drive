@@ -170,7 +170,7 @@ class MediaScanner(private val context: Context) {
             val contentUri = ContentUris.withAppendedId(baseUri, id)
 
             val status = when {
-                NativeEngine.safeIsOversized(size) -> UploadStatus.OVERSIZED
+                size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
                 prefs.isUploaded(id, name, size) -> UploadStatus.COMPLETED
                 else -> UploadStatus.QUEUED
             }
@@ -224,7 +224,7 @@ class MediaScanner(private val context: Context) {
         val uri = Uri.fromFile(file)
 
         val status = when {
-            NativeEngine.safeIsOversized(size) -> UploadStatus.OVERSIZED
+            size > (2000L * 1024L * 1024L) -> UploadStatus.OVERSIZED
             prefs.isUploaded(syntheticId, name, size) -> UploadStatus.COMPLETED
             else -> UploadStatus.QUEUED
         }

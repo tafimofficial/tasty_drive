@@ -107,13 +107,19 @@ class QueueAdapter(
             // Status Badge and Progress
             when (item.status) {
                 UploadStatus.QUEUED -> {
-                    binding.tvStatusBadge.text = "Queued ⏳"
-                    binding.tvStatusBadge.setTextColor(ContextCompat.getColor(binding.root.context, R.color.status_orange))
+                    if (item.isOver50MB) {
+                        binding.tvStatusBadge.text = "Needs Local API 💻"
+                        binding.tvStatusBadge.setTextColor(ContextCompat.getColor(binding.root.context, R.color.status_blue))
+                    } else {
+                        binding.tvStatusBadge.text = "Queued ⏳"
+                        binding.tvStatusBadge.setTextColor(ContextCompat.getColor(binding.root.context, R.color.status_orange))
+                    }
                     binding.pbItemProgress.visibility = View.GONE
                     binding.tvItemError.visibility = View.GONE
                 }
                 UploadStatus.UPLOADING -> {
-                    binding.tvStatusBadge.text = "${item.progress}% 🚀"
+                    val targetStr = if (!item.uploadTarget.isNullOrEmpty()) " [${item.uploadTarget}]" else ""
+                    binding.tvStatusBadge.text = "${item.progress}%$targetStr 🚀"
                     binding.tvStatusBadge.setTextColor(ContextCompat.getColor(binding.root.context, R.color.status_green))
                     binding.pbItemProgress.visibility = View.VISIBLE
                     binding.pbItemProgress.progress = item.progress

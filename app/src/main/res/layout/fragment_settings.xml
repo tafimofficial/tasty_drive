@@ -18,7 +18,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Settings &amp; Configuration"
+            android:text="Settings &amp; Dual Bot Configuration"
             android:textColor="@color/white"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -26,37 +26,66 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Configure Telegram Bot, network limits &amp; native engine"
+            android:text="Configure Cloud Bot API &amp; Local Docker Server for up to 2GB uploads"
             android:textColor="@color/white_70"
             android:textSize="12sp"
             android:layout_marginTop="2dp"
             android:layout_marginBottom="16dp" />
 
-        <!-- 1. Telegram Bot Token Card -->
+        <!-- 1. Cloud Telegram Bot API Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card_rounded"
             android:orientation="vertical"
             android:padding="16dp"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="☁️"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cloud Bot API (Official Telegram)"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill_badge"
+                    android:text="Max 50MB"
+                    android:textColor="@color/status_orange"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Telegram Bot Token"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Create a bot with @BotFather and paste the HTTP API token here"
+                android:text="Uploads files &lt;= 50MB directly to api.telegram.org anywhere."
                 android:textColor="@color/white_70"
                 android:textSize="12sp"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="4dp" />
 
+            <!-- Cloud Bot Token -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilBotToken"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -70,8 +99,28 @@
                     android:id="@+id/etBotToken"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="e.g. 7123456789:AAHkL8-..."
+                    android:hint="Cloud Bot Token (from @BotFather)"
                     android:inputType="textPassword"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Cloud Channel ID -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilChannelId"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:boxStrokeColor="@color/primary"
+                app:hintTextColor="@color/primary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etChannelId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Destination Channel ID (e.g. -1001928374650)"
+                    android:inputType="text"
                     android:textColor="@color/white"
                     android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -86,14 +135,14 @@
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnTestBot"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="38dp"
                     android:background="@drawable/bg_button_secondary"
-                    android:text="🔍 Test Bot"
+                    android:text="🔍 Test Cloud"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:textSize="13sp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:textSize="12sp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp" />
 
                 <TextView
                     android:id="@+id/tvBotTestResult"
@@ -107,33 +156,101 @@
 
         </LinearLayout>
 
-        <!-- 2. Telegram Channel ID Card -->
+        <!-- 2. Local Docker Bot API Server Card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_card_rounded"
             android:orientation="vertical"
             android:padding="16dp"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💻"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Local Docker Bot API (PC)"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill_badge"
+                    android:text="Up to 2000MB (2GB) 🚀"
+                    android:textColor="@color/status_green"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Telegram Channel ID / Chat ID"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="e.g. -1001234567890 or @your_channel (Add bot as Channel Admin!)"
+                android:text="Uploads files > 50MB (up to 2GB) via your local Docker container on Wi-Fi."
                 android:textColor="@color/white_70"
                 android:textSize="12sp"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="4dp" />
 
+            <!-- Auto-Discovery Action Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnAutoDiscoverLocal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_button_gradient"
+                    android:text="🔍 Auto-Discover PC on Wi-Fi"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp" />
+
+                <ProgressBar
+                    android:id="@+id/pbDiscoveringLocal"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="10dp"
+                    android:indeterminateTint="@color/primary"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tvDiscoveryStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/primary_light"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Local Server URL Input -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilChannelId"
+                android:id="@+id/tilLocalServerUrl"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -142,15 +259,75 @@
                 app:hintTextColor="@color/primary">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etChannelId"
+                    android:id="@+id/etLocalServerUrl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="e.g. -1001928374650"
-                    android:inputType="text"
+                    android:hint="Local Server URL (e.g. http://192.168.1.50:8081)"
+                    android:inputType="textUri"
                     android:textColor="@color/white"
                     android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Checkbox: Same Token as Cloud -->
+            <CheckBox
+                android:id="@+id/cbSameTokenLocal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Use same Bot Token &amp; Channel as Cloud"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:buttonTint="@color/primary"
+                android:checked="true"
+                android:layout_marginTop="6dp" />
+
+            <!-- Custom Auth for Local API (hidden when cbSameTokenLocal is checked) -->
+            <LinearLayout
+                android:id="@+id/layoutLocalCustomAuth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilLocalBotToken"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    app:boxStrokeColor="@color/primary"
+                    app:hintTextColor="@color/primary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etLocalBotToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Dedicated Local Bot Token (optional)"
+                        android:inputType="textPassword"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilLocalChannelId"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    app:boxStrokeColor="@color/primary"
+                    app:hintTextColor="@color/primary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etLocalChannelId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Dedicated Local Channel ID (optional)"
+                        android:inputType="text"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <!-- Test Local Server Button & Result -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -159,19 +336,19 @@
                 android:layout_marginTop="10dp">
 
                 <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btnTestChannel"
+                    android:id="@+id/btnTestLocalServer"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="38dp"
                     android:background="@drawable/bg_button_secondary"
-                    android:text="🔍 Test Channel"
+                    android:text="🔍 Test Local Server"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
-                    android:textSize="13sp"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:textSize="12sp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp" />
 
                 <TextView
-                    android:id="@+id/tvChannelTestResult"
+                    android:id="@+id/tvLocalServerTestResult"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -188,7 +365,7 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:background="@drawable/bg_button_gradient"
-            android:text="💾 Save Telegram Settings"
+            android:text="💾 Save All Settings"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="15sp"
@@ -429,4 +606,3 @@
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
-

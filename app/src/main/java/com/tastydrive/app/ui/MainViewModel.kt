@@ -13,6 +13,7 @@ import com.tastydrive.app.data.UploadStatus
 import com.tastydrive.app.service.ApiResult
 import com.tastydrive.app.service.TelegramApiClient
 import com.tastydrive.app.service.UploadManager
+import com.tastydrive.app.util.LocalServerDiscovery
 import com.tastydrive.app.util.MediaScanner
 import com.tastydrive.app.util.NativeEngine
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +51,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val stats: StateFlow<UploadStats> = uploadManager.stats
 
+    // Local Server Connection Live Status
+    val isLocalConnected: StateFlow<Boolean> = uploadManager.isLocalConnected
+    val localServerStatusText: StateFlow<String> = uploadManager.localServerStatusText
+    val localServerUrl: StateFlow<String> = uploadManager.localServerUrl
+
     // Filtered gallery items
     val galleryItems: StateFlow<List<MediaItem>> = combine(
         uploadManager.itemsFlow,
@@ -70,11 +76,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // High performance queue items: active uploading + failed + next 50 pending + 10 recent completed
     val queueItems: StateFlow<List<MediaItem>> = uploadManager.itemsFlow.map { items ->
-        val nonOversized = items.filter { !it.isOver50MB }
-        val uploading = nonOversized.filter { it.status == UploadStatus.UPLOADING }
-        val failed = nonOversized.filter { it.status == UploadStatus.FAILED }
-        val queued = nonOversized.filter { it.status == UploadStatus.QUEUED || it.status == UploadStatus.PAUSED }.take(50)
-        val recentCompleted = nonOversized.filter { it.status == UploadStatus.COMPLETED }.takeLast(10)
+        val uploadable = items.filter { !it.isOver2GB }
+        val uploading = uploadable.filter { it.status == UploadStatus.UPLOADING }
+        val failed = uploadable.filter { it.status == UploadStatus.FAILED }
+        val queued = uploadable.filter { it.status == UploadStatus.QUEUED || it.status == UploadStatus.PAUSED }.take(50)
+        val recentCompleted = uploadable.filter { it.status == UploadStatus.COMPLETED }.takeLast(10)
         uploading + failed + queued + recentCompleted
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -116,13 +122,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         uploadManager.enqueueSingle(item)
     }
 
-    suspend fun testBot(token: String): ApiResult<String> {
-        return apiClient.testConnection(token)
+    suspend fun testCloudBot(token: String): ApiResult<String> {
+        return apiClient.testConnection(token, TelegramApiClient.CLOUD_API_BASE)
     }
 
-    suspend fun testChannel(token: String, channelId: String): ApiResult<String> {
-        return apiClient.testChannel(token, channelId)
+    suspend fun testCloudChannel(token: String, channelId: String): ApiResult<String> {
+        return apiClient.testChannel(token, channelId, TelegramApiClient.CLOUD_API_BASE)
     }
+
+    suspend fun testLocalServer(serverUrl: String, token: String): ApiResult<String> {
+        val normalized = TelegramApiClient.normalizeBaseUrl(serverUrl)
+        return apiClient.testConnection(token, normalized)
+    }
+
+    suspend fun testLocalChannel(serverUrl: String, token: String, channelId: String): ApiResult<String> {
+        val normalized = TelegramApiClient.normalizeBaseUrl(serverUrl)
+        return apiClient.testChannel(token, channelId, normalized)
+    }
+
+    suspend fun autoDiscoverLocalServer(onProgress: ((checked: Int, total: Int) -> Unit)? = null): LocalServerDiscovery.DiscoveredServer? {
+        return uploadManager.autoDiscoverAndConnectLocal(onProgress)
+    }
+
+    // Backward compatibility
+    suspend fun testBot(token: String): ApiResult<String> = testCloudBot(token)
+    suspend fun testChannel(token: String, channelId: String): ApiResult<String> = testCloudChannel(token, channelId)
 
     fun createTelegramShareIntent(selectedItems: List<MediaItem>): Intent {
         val context = getApplication<Application>()

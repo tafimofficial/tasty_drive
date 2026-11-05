@@ -37,10 +37,14 @@ data class MediaItem(
     var speed: String = "",
     var errorMessage: String? = null,
     var isSelected: Boolean = false,
-    var checksum: Long = 0L
+    var checksum: Long = 0L,
+    var uploadTarget: String? = null
 ) {
     val isOver50MB: Boolean
         get() = size > (50L * 1024L * 1024L)
+
+    val isOver2GB: Boolean
+        get() = size > (2000L * 1024L * 1024L)
 
     companion object {
         fun determineCategory(fileName: String, mimeType: String): FileCategory {

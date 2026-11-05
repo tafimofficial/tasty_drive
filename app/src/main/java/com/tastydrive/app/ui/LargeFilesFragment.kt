@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.tastydrive.app.R
 import com.tastydrive.app.data.MediaItem
 import com.tastydrive.app.databinding.FragmentLargeFilesBinding
 import com.tastydrive.app.util.TelegramShareHelper
@@ -58,6 +59,31 @@ class LargeFilesFragment : Fragment() {
             adapter.selectAll(isChecked)
         }
 
+        // --- Upload via Local Docker Server Button ---
+        binding.btnUploadViaLocalDocker.setOnClickListener {
+            val selected = adapter.getSelectedItems()
+            if (selected.isEmpty()) {
+                Toast.makeText(requireContext(), "Please select at least one large file to upload!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            for (item in selected) {
+                viewModel.enqueueSingleItem(item)
+            }
+            viewModel.startOrResumeUploads()
+
+            Toast.makeText(
+                requireContext(),
+                "Enqueued ${selected.size} large files to Local Docker upload! 🚀",
+                Toast.LENGTH_LONG
+            ).show()
+
+            adapter.selectAll(false)
+            binding.cbSelectAll.isChecked = false
+            updateSelectionState(0)
+        }
+
+        // --- Share to Telegram App Button ---
         binding.btnShareToTelegram.setOnClickListener {
             val selected = adapter.getSelectedItems()
             if (selected.isEmpty()) {
@@ -83,10 +109,18 @@ class LargeFilesFragment : Fragment() {
     private fun updateSelectionState(selectedCount: Int) {
         val totalLarge = adapter.currentList.size
         binding.tvSelectedStats.text = "$selectedCount of $totalLarge selected"
+
+        binding.btnUploadViaLocalDocker.text = if (selectedCount > 0) {
+            "💻 Upload $selectedCount Files via Local Docker"
+        } else {
+            "💻 Upload via Local Docker API"
+        }
+        binding.btnUploadViaLocalDocker.isEnabled = selectedCount > 0
+
         binding.btnShareToTelegram.text = if (selectedCount > 0) {
             "🚀 Share $selectedCount Files to Telegram"
         } else {
-            "🚀 Share Files to Telegram"
+            "🚀 Share Files to Telegram App"
         }
         binding.btnShareToTelegram.isEnabled = selectedCount > 0
     }
@@ -133,11 +167,9 @@ class LargeFilesFragment : Fragment() {
             }
 
         } catch (e: ActivityNotFoundException) {
-            // Telegram package not found or direct activity missing; fallback to system chooser
             launchSystemChooser(batchToShare)
         } catch (ex: Exception) {
             ex.printStackTrace()
-            // Final fallback to system chooser
             try {
                 launchSystemChooser(batchToShare)
             } catch (fatal: Exception) {
@@ -169,12 +201,30 @@ class LargeFilesFragment : Fragment() {
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.largeFiles.collect { files ->
-                    adapter.submitList(files)
-                    binding.tvLargeCountBadge.text = "${files.size} Files"
-                    binding.layoutEmptyLarge.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
-                    binding.rvLargeFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
-                    updateSelectionState(adapter.getSelectedItems().size)
+                // Collect large files
+                launch {
+                    viewModel.largeFiles.collect { files ->
+                        adapter.submitList(files)
+                        binding.tvLargeCountBadge.text = "${files.size} Files"
+                        binding.layoutEmptyLarge.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+                        binding.rvLargeFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
+                        updateSelectionState(adapter.getSelectedItems().size)
+                    }
+                }
+
+                // Collect local docker server status
+                launch {
+                    viewModel.isLocalConnected.collect { isConnected ->
+                        if (isConnected) {
+                            binding.tvLocalDockerStatusInLarge.setTextColor(resources.getColor(R.color.status_green, null))
+                            binding.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Connected 🟢 (Auto-Upload Active up to 2GB!)"
+                            binding.btnUploadViaLocalDocker.visibility = View.VISIBLE
+                        } else {
+                            binding.tvLocalDockerStatusInLarge.setTextColor(resources.getColor(R.color.status_orange, null))
+                            binding.tvLocalDockerStatusInLarge.text = "💻 Local Docker Server: Offline 🔴 (Queued files wait for PC)"
+                            binding.btnUploadViaLocalDocker.visibility = View.GONE
+                        }
+                    }
                 }
             }
         }

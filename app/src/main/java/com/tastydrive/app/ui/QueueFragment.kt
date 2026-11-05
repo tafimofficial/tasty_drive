@@ -127,7 +127,9 @@ class QueueFragment : Fragment() {
 
                 launch {
                     val networkDesc = NetworkHelper.getInstance(requireContext()).getNetworkStatusDescription()
-                    binding.tvNetworkInfo.text = "Network: $networkDesc"
+                    viewModel.localServerStatusText.collect { localStatus ->
+                        binding.tvNetworkInfo.text = "Network: $networkDesc • $localStatus"
+                    }
                 }
             }
         }
