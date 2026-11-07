@@ -77,6 +77,9 @@ Download the ready-to-install signed APK directly:
 4. **Start Backup**:
    - Go to the **Queue** tab and tap **"🚀 Start Uploads"**!
    - You can lock your phone or swipe the app away; Tasty Drive will continue backing up in the background!
+   - বক্সে হাত দিয়ে লিখতে না চাইলে উপরে থাকা 🔍 Auto-Discover PC on Wi-Fi বাটনে একটা চাপ দিন—অ্যাপ নিজে থেকেই সঠিক আইপি http://192.168.0.190:8081 বক্সে বসিয়ে নিবে!
+   - **or add  your pc IP  manually **
+     
 
 ---
 
