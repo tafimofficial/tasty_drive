@@ -20,7 +20,7 @@
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
             android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:paddingBottom="6dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupFilter"
@@ -104,6 +104,50 @@
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
 
+        <!-- Selection Control Bar -->
+        <LinearLayout
+            android:id="@+id/layoutSelectionBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="6dp">
+
+            <CheckBox
+                android:id="@+id/cbSelectAllGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select All"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:buttonTint="@color/primary" />
+
+            <TextView
+                android:id="@+id/tvGallerySelectedCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="0 selected"
+                android:textColor="@color/white_70"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/btnClearSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Deselect"
+                android:textColor="@color/status_orange"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="6dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
         <!-- Media Grid RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvGallery"
@@ -113,25 +157,53 @@
             android:clipToPadding="false"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
-            android:paddingBottom="80dp" />
+            android:paddingBottom="90dp" />
 
     </LinearLayout>
 
-    <!-- Bottom Floating Action Button to Upload All or Selected -->
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnUploadSelection"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/bg_button_gradient"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:text="🚀 Upload All Unsent"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:elevation="6dp" />
+    <!-- Bottom Action Bar with 2 Buttons: [Upload Selected] and [Backup All Unsent] -->
+    <LinearLayout
+        android:id="@+id/layoutGalleryBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="14dp"
+        android:paddingTop="8dp"
+        android:background="@color/bg_dark">
+
+        <!-- Button 1: Upload Selected Files -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnUploadSelected"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_button_gradient"
+            android:text="📤 Upload Selected"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:elevation="4dp" />
+
+        <!-- Button 2: Backup All Unsent Media -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnBackupAll"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="🚀 Backup All Unsent"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:elevation="4dp" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

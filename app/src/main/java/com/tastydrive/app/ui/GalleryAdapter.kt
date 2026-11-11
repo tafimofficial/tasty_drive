@@ -17,6 +17,7 @@ import com.tastydrive.app.databinding.ItemGalleryBinding
 import com.tastydrive.app.util.NativeEngine
 
 class GalleryAdapter(
+    private val onSelectionChanged: (selectedCount: Int) -> Unit,
     private val onItemClick: (MediaItem) -> Unit
 ) : ListAdapter<MediaItem, GalleryAdapter.GalleryViewHolder>(DiffCallback) {
 
@@ -33,10 +34,31 @@ class GalleryAdapter(
         holder.bind(getItem(position))
     }
 
+    fun selectAll(select: Boolean) {
+        currentList.forEach { item ->
+            if (item.status != UploadStatus.COMPLETED) {
+                item.isSelected = select
+            } else {
+                item.isSelected = false
+            }
+        }
+        notifyDataSetChanged()
+        onSelectionChanged(getSelectedItems().size)
+    }
+
+    fun getSelectedItems(): List<MediaItem> {
+        return currentList.filter { it.isSelected && it.status != UploadStatus.COMPLETED }
+    }
+
+    fun clearSelection() {
+        selectAll(false)
+    }
+
     inner class GalleryViewHolder(private val binding: ItemGalleryBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: MediaItem) {
+            val ctx = binding.root.context
             binding.tvGalleryFileSize.text = NativeEngine.safeFormatFileSize(item.size)
 
             when (item.category) {
@@ -89,35 +111,56 @@ class GalleryAdapter(
                 }
             }
 
+            // Status and Selection badge handling
             when (item.status) {
                 UploadStatus.COMPLETED -> {
                     binding.ivGalleryStatus.visibility = View.VISIBLE
-                    binding.ivGalleryStatus.setImageResource(android.R.drawable.checkbox_on_background)
+                    binding.ivGalleryStatus.setImageResource(R.drawable.ic_check_circle)
                     binding.ivGalleryStatus.setColorFilter(
-                        ContextCompat.getColor(binding.root.context, R.color.status_green)
+                        ContextCompat.getColor(ctx, R.color.status_green)
                     )
-                }
-                UploadStatus.OVERSIZED -> {
-                    binding.ivGalleryStatus.visibility = View.VISIBLE
-                    binding.ivGalleryStatus.setImageResource(R.drawable.ic_nav_large)
-                    binding.ivGalleryStatus.setColorFilter(
-                        ContextCompat.getColor(binding.root.context, R.color.status_blue)
-                    )
+                    binding.ivGallerySelect.visibility = View.GONE
+                    binding.viewSelectionOverlay.visibility = View.GONE
                 }
                 UploadStatus.UPLOADING -> {
                     binding.ivGalleryStatus.visibility = View.VISIBLE
                     binding.ivGalleryStatus.setImageResource(android.R.drawable.ic_popup_sync)
                     binding.ivGalleryStatus.setColorFilter(
-                        ContextCompat.getColor(binding.root.context, R.color.primary)
+                        ContextCompat.getColor(ctx, R.color.primary)
                     )
+                    binding.ivGallerySelect.visibility = View.GONE
+                    binding.viewSelectionOverlay.visibility = View.GONE
                 }
                 else -> {
                     binding.ivGalleryStatus.visibility = View.GONE
+                    binding.ivGallerySelect.visibility = View.VISIBLE
+
+                    if (item.isSelected) {
+                        binding.ivGallerySelect.setImageResource(R.drawable.ic_gallery_select_check)
+                        binding.viewSelectionOverlay.visibility = View.VISIBLE
+                    } else {
+                        binding.ivGallerySelect.setImageResource(R.drawable.ic_gallery_select_uncheck)
+                        binding.viewSelectionOverlay.visibility = View.GONE
+                    }
                 }
             }
 
+            // Clicking toggles selection on pending items, or alerts on already completed items
             binding.root.setOnClickListener {
-                onItemClick(item)
+                if (item.status == UploadStatus.COMPLETED) {
+                    onItemClick(item)
+                } else {
+                    item.isSelected = !item.isSelected
+                    if (item.isSelected) {
+                        binding.ivGallerySelect.setImageResource(R.drawable.ic_gallery_select_check)
+                        binding.viewSelectionOverlay.visibility = View.VISIBLE
+                    } else {
+                        binding.ivGallerySelect.setImageResource(R.drawable.ic_gallery_select_uncheck)
+                        binding.viewSelectionOverlay.visibility = View.GONE
+                    }
+                    onSelectionChanged(getSelectedItems().size)
+                    onItemClick(item)
+                }
             }
         }
     }
@@ -128,7 +171,9 @@ class GalleryAdapter(
         }
 
         override fun areContentsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
-            return oldItem.status == newItem.status && oldItem.size == newItem.size
+            return oldItem.isSelected == newItem.isSelected &&
+                    oldItem.status == newItem.status &&
+                    oldItem.size == newItem.size
         }
     }
 }

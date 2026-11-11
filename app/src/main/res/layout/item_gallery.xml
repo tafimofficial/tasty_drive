@@ -8,6 +8,7 @@
     android:layout_margin="3dp">
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardGallery"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:cardCornerRadius="10dp"
@@ -48,6 +49,14 @@
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
+        <!-- Selection Tint Overlay -->
+        <View
+            android:id="@+id/viewSelectionOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#4DFF8A00"
+            android:visibility="gone" />
+
         <!-- Gradient shadow overlay -->
         <View
             android:layout_width="match_parent"
@@ -78,7 +87,7 @@
             app:tint="@color/white"
             android:visibility="gone" />
 
-        <!-- Status Icon (Completed checkmark / Over 50MB badge) -->
+        <!-- Status Icon (Completed checkmark / Over 50MB badge / Uploading) -->
         <ImageView
             android:id="@+id/ivGalleryStatus"
             android:layout_width="20dp"
@@ -88,6 +97,16 @@
             android:src="@android:drawable/checkbox_on_background"
             app:tint="@color/status_green"
             android:visibility="gone" />
+
+        <!-- Selection Checkbox / Icon (Shown for pending/unsent files) -->
+        <ImageView
+            android:id="@+id/ivGallerySelect"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:src="@drawable/ic_gallery_select_uncheck"
+            android:visibility="visible" />
 
     </androidx.cardview.widget.CardView>
 </FrameLayout>
